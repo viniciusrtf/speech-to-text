@@ -38,8 +38,8 @@ try:
         audio_data = audio_stream.read(CHUNK_SIZE)
         temp_wave.writeframes(audio_data)
 
-        # Only send data to the model after recording at least 5 seconds of audio
-        if temp_wave.getnframes() / RATE >= 5:
+        # Only send data to the model after recording at least 10 seconds of audio
+        if temp_wave.getnframes() / RATE >= 10:
             # Close the temporary wave file and send the data to the model
             temp_wave.close()
             audio = whisper.load_audio(temp_wave_filepath)
