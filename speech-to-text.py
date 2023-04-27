@@ -5,6 +5,8 @@ import wave
 import sys
 import numpy as np
 import whisper
+import time
+from datetime import datetime
 
 # Constants
 CHUNK_SIZE = 1024
@@ -23,6 +25,11 @@ temp_wave = wave.open(temp_wave_filepath, "wb")
 temp_wave.setnchannels(1)
 temp_wave.setsampwidth(pa.get_sample_size(pyaudio.paInt16))
 temp_wave.setframerate(RATE)
+
+# Create temporary and permanent log files
+temp_log_file = "temp_log.txt"
+log_file = f"log_{datetime.now().strftime('%Y%m%dT%H%M%S')}.txt"
+start_time = time.time()
 
 # Process audio stream
 try:
@@ -45,9 +52,10 @@ try:
             options = whisper.DecodingOptions()
             result = whisper.decode(model, mel, options)
 
-            # Print the recognized text
-            sys.stdout.write(f"\r{result.text}")
-            sys.stdout.flush()
+            # Print the recognized text and write it to the temporary log file
+            print(result.text)
+            with open(temp_log_file, "a") as f:
+                f.write(f"{result.text}\n")
 
             # Re-open the temporary wave file and start recording again
             temp_wave = wave.open(temp_wave_filepath, "wb")
@@ -64,4 +72,18 @@ audio_stream.close()
 pa.terminate()
 temp_wave.close()
 os.remove(temp_wave_filepath)
+
+# Calculate the end time and append the temporary log to the permanent log
+end_time = time.time()
+rfc3339_start = datetime.fromtimestamp(start_time).isoformat()
+rfc3339_end = datetime.fromtimestamp(end_time).isoformat()
+
+with open(log_file, "a") as permanent_log:
+    permanent_log.write(f"Start: {rfc3339_start}\n")
+    permanent_log.write(f"End: {rfc3339_end}\n\n")
+    with open(temp_log_file, "r") as temp_log:
+        permanent_log.write(temp_log.read())
+
+# Remove the temporary log file
+os.remove(temp_log_file)
 
